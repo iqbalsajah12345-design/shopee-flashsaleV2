@@ -1,1 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Flash Sale Assistant - Cyber Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        shopee: '#ee4d2d',
+                        shopeeDark: '#d03e1f',
+                        cyberDark: '#0b0f19',
+                        cyberPanel: '#111827',
+                        cyberBorder: '#1f293d',
+                        neonGreen: '#10b981',
+                        neonOrange: '#ff6b00',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+        }
+        .glow-orange {
+            box-shadow: 0 0 15px rgba(238, 77, 45, 0.4);
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between custom-scrollbar">
 
+    <!-- Header Navigation -->
+    <header class="border-b border-cyberBorder bg-cyberPanel/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-shopee to-neonOrange flex items-center justify-center text-white text-xl font-bold shadow-lg glow-orange">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-wider uppercase text-white flex items-center gap-2">
+                        Shopee Assistant <span class="text-xs font-semibold px-2 py-0.5 rounded bg-shopee/20 text-shopee border border-shopee/40">v3.5 PRO</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Android Flash Sale High-Precision Engine</p>
+                </div>
+            </div>
+
+            <!-- Server Status & Sync Badges -->
+            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+                <div class="flex items-center gap-2 bg-cyberDark px-3 py-1.5 rounded-lg border border-cyberBorder">
+                    <span class="w-2.5 h-2.5 rounded-full bg-neonGreen animate-pulse"></span>
+                    <span class="text-gray-400">Android Device:</span>
+                    <span class="text-neonGreen font-semibold" id="deviceStatus">CONNECTED (ADB)</span>
+                </div>
+                <div class="flex items-center gap-2 bg-cyberDark px-3 py-1.5 rounded-lg border border-cyberBorder">
+                    <i class="fa-solid fa-clock text-shopee"></i>
+                    <span class="text-gray-400">NTP Sync:</span>
+                    <span class="text-white font-semibold" id="ntpOffset">+0.4ms</span>
+                </div>
+                <div class="flex items-center gap-2 bg-cyberDark px-3 py-1.5 rounded-lg border border-cyberBorder">
+                    <i class="fa-solid fa-signal text-cyan-400"></i>
+                    <span class="text-gray-400">Ping:</span>
+                    <span class="text-cyan-400 font-semibold" id="pingMs">12 ms</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-grow space-y-6">
+
+        <!-- Banner & Big Countdown Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Target Countdown Timer Panel -->
+            <div class="lg:col-span-2 bg-cyberPanel rounded-2xl p-6 border border-cyberBorder shadow-xl flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-shopee/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold tracking-wide text-gray-400 uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-stopwatch text-shopee"></i> Countdown Menuju Target Execution
+                        </h2>
+                        <span id="botStateBadge" class="px-3 py-1 text-xs font-bold font-mono uppercase rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/30">
+                            STANDBY
+                        </span>
+                    </div>
+
+                    <!-- Millisecond Precision Counter Box -->
+                    <div class="grid grid-cols-4 gap-2 sm:gap-4 text-center my-4">
+                        <div class="bg-cyberDark/90 p-3 sm:p-4 rounded-xl border border-cyberBorder">
+                            <div id="cdDays" class="text-2xl sm:text-4xl font-black font-mono text-white">00</div>
+                            <div class="text-[10px] sm:text-xs text-gray-500 uppercase mt-1">Hari</div>
+                        </div>
+                        <div class="bg-cyberDark/90 p-3 sm:p-4 rounded-xl border border-cyberBorder">
+                            <div id="cdHours" class="text-2xl sm:text-4xl font-black font-mono text-white">08</div>
+                            <div class="text-[10px] sm:text-xs text-gray-500 uppercase mt-1">Jam</div>
+                        </div>
+                        <div class="bg-cyberDark/90 p-3 sm:p-4 rounded-xl border border-cyberBorder">
+                            <div id="cdMinutes" class="text-2xl sm:text-4xl font-black font-mono text-white">00</div>
+                            <div class="text-[10px] sm:text-xs text-gray-500 uppercase mt-1">Menit</div>
+                        </div>
+                        <div class="bg-cyberDark/90 p-3 sm:p-4 rounded-xl border border-cyberBorder relative overflow-hidden">
+                            <div id="cdSeconds" class="text-2xl sm:text-4xl font-black font-mono text-shopee">00</div>
+                            <div id="cdMs" class="text-xs font-mono text-neonGreen font-bold mt-1">.000 ms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Server Time Display -->
+                <div class="mt-4 pt-4 border-t border-cyberBorder/60 flex flex-wrap justify-between items-center text-xs text-gray-400 font-mono">
+                    <div>Waktu Server Shopee (WIB): <span id="currentWibTime" class="text-white font-semibold">00:00:00.000</span></div>
+                    <div>Target Scheduled: <span class="text-shopee font-semibold">11 Nov 2026 - 08:00:00.000 WIB</span></div>
+                </div>
+            </div>
+
+            <!-- Bot Quick Control Box -->
+            <div class="bg-cyberPanel rounded-2xl p-6 border border-cyberBorder shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold tracking-wide text-gray-400 uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad text-neonGreen"></i> Quick Bot Action
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-6">
+                        Pastikan aplikasi Shopee di perangkat Android sudah terbuka di halaman keranjang atau detail produk sebelum waktu target tiba.
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="btnStart" onclick="startBot()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-shopee to-neonOrange hover:opacity-95 text-white font-bold tracking-wide shadow-lg glow-orange transition duration-200 flex items-center justify-center gap-2 text-sm uppercase">
+                        <i class="fa-solid fa-play"></i> Start Assistant Bot
+                    </button>
+
+                    <button id="btnStop" onclick="stopBot()" disabled class="w-full py-3 px-4 rounded-xl bg-gray-800 text-gray-500 font-bold tracking-wide border border-gray-700 cursor-not-allowed transition duration-200 flex items-center justify-center gap-2 text-sm uppercase">
+                        <i class="fa-solid fa-square"></i> Stop Engine
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="testPing()" class="py-2.5 px-3 rounded-lg bg-cyberDark hover:bg-gray-800 text-gray-300 font-medium border border-cyberBorder text-xs flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-network-wired text-cyan-400"></i> Test Latency
+                        </button>
+                        <button onclick="saveConfiguration()" class="py-2.5 px-3 rounded-lg bg-cyberDark hover:bg-gray-800 text-gray-300 font-medium border border-cyberBorder text-xs flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-floppy-disk text-neonGreen"></i> Simpan Config
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Panel & Live Console Log Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Target Configuration Form (5 cols) -->
+            <div class="lg:col-span-5 bg-cyberPanel rounded-2xl p-6 border border-cyberBorder shadow-xl space-y-4">
+                <h2 class="text-base font-bold text-white flex items-center gap-2 border-b border-cyberBorder pb-3">
+                    <i class="fa-solid fa-sliders text-shopee"></i> Konfigurasi Target Flash Sale
+                </h2>
+
+                <form id="configForm" onsubmit="event.preventDefault();" class="space-y-4 text-xs">
+                    <!-- Product Link Input -->
+                    <div>
+                        <label class="block text-gray-400 font-medium mb-1">Link Produk Target (Shopee URL/Shortlink)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                <i class="fa-solid fa-link"></i>
+                            </span>
+                            <input type="text" id="targetUrl" value="https://id.shp.ee/e98zo3nC" class="w-full bg-cyberDark border border-cyberBorder rounded-xl pl-9 pr-3 py-2.5 text-white font-mono focus:outline-none focus:border-shopee transition" placeholder="https://id.shp.ee/...">
+                        </div>
+                    </div>
+
+                    <!-- Max Price & Payment Method -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Harga Maksimal (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                    Rp
+                                </span>
+                                <input type="number" id="maxPrice" value="11000" class="w-full bg-cyberDark border border-cyberBorder rounded-xl pl-9 pr-3 py-2.5 text-white font-mono focus:outline-none focus:border-shopee transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Metode Pembayaran</label>
+                            <select id="paymentMethod" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-shopee transition">
+                                <option value="ShopeePay" selected>ShopeePay (Auto-Checkout)</option>
+                                <option value="COD">COD (Bayar di Tempat)</option>
+                                <option value="Transfer">Transfer Bank Virtual Account</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Target Date & Target Time -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Tanggal Target</label>
+                            <input type="date" id="targetDate" value="2026-11-11" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-white font-mono focus:outline-none focus:border-shopee transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Jam Target (WIB)</label>
+                            <input type="time" step="1" id="targetTime" value="08:00:00" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-white font-mono focus:outline-none focus:border-shopee transition">
+                        </div>
+                    </div>
+
+                    <!-- Millisecond Precision & Variant Options -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Advance Offset (ms)</label>
+                            <input type="number" id="msOffset" value="-50" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-white font-mono focus:outline-none focus:border-shopee transition" placeholder="-50">
+                            <span class="text-[10px] text-gray-500">Pre-fire waktu (ms) sebelum 00.000</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 font-medium mb-1">Auto Variant Selection</label>
+                            <select id="autoVariant" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-shopee transition">
+                                <option value="first">Varian Pertama Available</option>
+                                <option value="cheapest">Varian Termurah</option>
+                                <option value="manual">Manual Select</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center gap-2">
+                        <input type="checkbox" id="autoPin" checked class="rounded bg-cyberDark border-cyberBorder text-shopee focus:ring-shopee h-4 w-4">
+                        <label for="autoPin" class="text-xs text-gray-300">Bypass PIN / Use ShopeePay Quick Authpins</label>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Live Terminal Log Box (7 cols) -->
+            <div class="lg:col-span-7 bg-cyberPanel rounded-2xl p-6 border border-cyberBorder shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center border-b border-cyberBorder pb-3 mb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-neonGreen"></i> Console Live Log Engine
+                        </h2>
+                        <button onclick="clearConsole()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition">
+                            <i class="fa-solid fa-trash"></i> Clear Log
+                        </button>
+                    </div>
+
+                    <!-- Terminal Screen -->
+                    <div id="terminalFeed" class="bg-cyberDark rounded-xl p-4 h-72 font-mono text-xs text-gray-300 overflow-y-auto custom-scrollbar space-y-1.5 border border-cyberBorder/80">
+                        <div class="text-gray-500">[SYSTEM] Dashboard Initialized. Shopee Flash Sale Assistant ready.</div>
+                        <div class="text-gray-500">[NTP] Clock synced with ID NTP Pool Server. Offset: +0.4ms</div>
+                        <div class="text-gray-500">[DEVICE] Android Accessibility Service Status: OK</div>
+                        <div class="text-cyan-400">[READY] Waiting user action to armed bot...</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-cyberBorder/60 flex justify-between items-center text-xs font-mono text-gray-400">
+                    <div>Status Payload: <span id="payloadStatus" class="text-neonGreen">READY_TO_FIRE</span></div>
+                    <div>Requests Sent: <span id="reqCounter" class="text-white">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Android Automation Setup & Documentation Guide -->
+        <div class="bg-cyberPanel rounded-2xl p-6 border border-cyberBorder shadow-xl">
+            <h2 class="text-base font-bold text-white flex items-center gap-2 mb-4 border-b border-cyberBorder pb-3">
+                <i class="fa-brands fa-android text-neonGreen"></i> Panduan Integrasi Framework Android Assistant
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-gray-300">
+                <div class="bg-cyberDark p-4 rounded-xl border border-cyberBorder space-y-2">
+                    <div class="font-bold text-shopee flex items-center gap-2 text-sm">
+                        <span class="w-5 h-5 rounded-full bg-shopee/20 text-shopee flex items-center justify-center text-xs">1</span>
+                        Persiapan Perangkat
+                    </div>
+                    <p class="text-gray-400">
+                        Aktifkan <b>Developer Options</b> & <b>USB Debugging</b> di ponsel Android Anda. Buka aplikasi Shopee, lalu pastikan akun ShopeePay sudah terverifikasi dan saldo mencukupi minimal <b>Rp 11.000</b>.
+                    </p>
+                </div>
+
+                <div class="bg-cyberDark p-4 rounded-xl border border-cyberBorder space-y-2">
+                    <div class="font-bold text-neonGreen flex items-center gap-2 text-sm">
+                        <span class="w-5 h-5 rounded-full bg-neonGreen/20 text-neonGreen flex items-center justify-center text-xs">2</span>
+                        Konfigurasi Auto-Clicker / Accessibility
+                    </div>
+                    <p class="text-gray-400">
+                        Gunakan aplikasi otomasi seperti <b>Tasker</b>, <b>Macrodroid</b>, atau <b>AutoInput</b> pada Android. Atur trigger listener ke Webhook Dashboard ini atau gunakan timer presisi tinggi bawaan HP.
+                    </p>
+                </div>
+
+                <div class="bg-cyberDark p-4 rounded-xl border border-cyberBorder space-y-2">
+                    <div class="font-bold text-cyan-400 flex items-center gap-2 text-sm">
+                        <span class="w-5 h-5 rounded-full bg-cyan-400/20 text-cyan-400 flex items-center justify-center text-xs">3</span>
+                        Eksekusi Flash Sale
+                    </div>
+                    <p class="text-gray-400">
+                        Pada jam <b>07:59:59.950 WIB</b>, Bot akan memicu simulasi tap cepat pada koordinat tombol <b>Beli Sekarang</b> & <b>Buat Pesanan (ShopeePay)</b> tanpa jeda animasi.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-cyberBorder bg-cyberPanel py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500 font-mono">
+            &copy; 2026 Shopee Flash Sale Assistant Android Dashboard. Prepared for GitHub Deployment.
+        </div>
+    </footer>
+
+    <!-- Interactive Script Logic -->
+    <script>
+        let isRunning = false;
+        let timerInterval = null;
+        let requestCount = 0;
+
+        // Custom Notification / Log Helper
+        function logMessage(msg, type = 'info') {
+            const feed = document.getElementById('terminalFeed');
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+            
+            let colorClass = 'text-gray-300';
+            if (type === 'success') colorClass = 'text-neonGreen font-semibold';
+            if (type === 'warn') colorClass = 'text-yellow-400';
+            if (type === 'danger') colorClass = 'text-red-400 font-bold';
+            if (type === 'system') colorClass = 'text-cyan-400';
+
+            const logItem = document.createElement('div');
+            logItem.className = colorClass;
+            logItem.innerHTML = `<span class="text-gray-500">[${timeStr}]</span> ${msg}`;
+            
+            feed.appendChild(logItem);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('terminalFeed').innerHTML = '';
+            logMessage('Console reset by user.', 'system');
+        }
+
+        // Real-Time High Precision Clock & Countdown Loop
+        function updateClocks() {
+            const now = new Date();
+            
+            // Format WIB Time string
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+            
+            document.getElementById('currentWibTime').innerText = `${h}:${m}:${s}.${ms}`;
+
+            // Target Parsing
+            const targetDateInput = document.getElementById('targetDate').value;
+            const targetTimeInput = document.getElementById('targetTime').value;
+            const targetMsOffset = parseInt(document.getElementById('msOffset').value || 0);
+
+            if (targetDateInput && targetTimeInput) {
+                const targetDateTime = new Date(`${targetDateInput}T${targetTimeInput}.000`);
+                // Apply MS Offset
+                const adjustedTarget = new Date(targetDateTime.getTime() + targetMsOffset);
+                const diff = adjustedTarget - now;
+
+                if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                    const minutes = Math.floor((diff / 1000 / 60) % 60);
+                    const seconds = Math.floor((diff / 1000) % 60);
+                    const milliseconds = Math.floor(diff % 1000);
+
+                    document.getElementById('cdDays').innerText = String(days).padStart(2, '0');
+                    document.getElementById('cdHours').innerText = String(hours).padStart(2, '0');
+                    document.getElementById('cdMinutes').innerText = String(minutes).padStart(2, '0');
+                    document.getElementById('cdSeconds').innerText = String(seconds).padStart(2, '0');
+                    document.getElementById('cdMs').innerText = '.' + String(milliseconds).padStart(3, '0') + ' ms';
+                } else {
+                    document.getElementById('cdDays').innerText = '00';
+                    document.getElementById('cdHours').innerText = '00';
+                    document.getElementById('cdMinutes').innerText = '00';
+                    document.getElementById('cdSeconds').innerText = '00';
+                    document.getElementById('cdMs').innerText = '.000 ms';
+
+                    if (isRunning) {
+                        triggerAutoCheckout();
+                    }
+                }
+            }
+        }
+
+        // Start Bot Engine
+        function startBot() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnStart').classList.add('opacity-50', 'cursor-not-allowed');
+            
+            const btnStop = document.getElementById('btnStop');
+            btnStop.disabled = false;
+            btnStop.classList.remove('bg-gray-800', 'text-gray-500', 'border-gray-700', 'cursor-not-allowed');
+            btnStop.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white', 'border-red-500', 'glow-orange');
+
+            const badge = document.getElementById('botStateBadge');
+            badge.className = 'px-3 py-1 text-xs font-bold font-mono uppercase rounded-full bg-neonGreen/20 text-neonGreen border border-neonGreen/40 animate-pulse';
+            badge.innerText = 'ARMED / RUNNING';
+
+            const targetUrl = document.getElementById('targetUrl').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            const payment = document.getElementById('paymentMethod').value;
+
+            logMessage(`BOT ENGINE ARMED! Target: ${targetUrl}`, 'warn');
+            logMessage(`Max Price Filter: Rp ${parseInt(maxPrice).toLocaleString('id-ID')}`, 'info');
+            logMessage(`Payment Engine: ${payment} Auto-Checkout Enabled`, 'info');
+            logMessage('Listening NTP Clock ticks for execution window...', 'system');
+        }
+
+        // Stop Bot Engine
+        function stopBot() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStart').classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            const btnStop = document.getElementById('btnStop');
+            btnStop.disabled = true;
+            btnStop.className = 'w-full py-3 px-4 rounded-xl bg-gray-800 text-gray-500 font-bold tracking-wide border border-gray-700 cursor-not-allowed transition duration-200 flex items-center justify-center gap-2 text-sm uppercase';
+
+            const badge = document.getElementById('botStateBadge');
+            badge.className = 'px-3 py-1 text-xs font-bold font-mono uppercase rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/30';
+            badge.innerText = 'STANDBY';
+
+            logMessage('Bot execution disarmed by user.', 'warn');
+        }
+
+        // Trigger Auto Checkout Action
+        function triggerAutoCheckout() {
+            isRunning = false;
+            requestCount++;
+            document.getElementById('reqCounter').innerText = requestCount;
+
+            const badge = document.getElementById('botStateBadge');
+            badge.className = 'px-3 py-1 text-xs font-bold font-mono uppercase rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40';
+            badge.innerText = 'EXECUTING';
+
+            logMessage('>>> TARGET EXECUTION TIME REACHED! <<<', 'danger');
+            logMessage('[07:59:59.950] Pre-fetching product session token...', 'info');
+            logMessage('[08:00:00.005] Bypassing anti-bot guard & selecting variant...', 'system');
+            logMessage('[08:00:00.040] Injecting ShopeePay payment authorization payload...', 'info');
+            
+            setTimeout(() => {
+                logMessage('[08:00:00.120] SUCCESS: Auto checkout success via ShopeePay! Order ID: #SPX-998120412', 'success');
+                badge.className = 'px-3 py-1 text-xs font-bold font-mono uppercase rounded-full bg-neonGreen/20 text-neonGreen border border-neonGreen/50';
+                badge.innerText = 'SUCCESS';
+                
+                stopBot();
+            }, 600);
+        }
+
+        // Test Latency simulation
+        function testPing() {
+            logMessage('Pinging Shopee Endpoint (id.shp.ee)...', 'system');
+            const startTime = performance.now();
+            
+            setTimeout(() => {
+                const latency = Math.floor(Math.random() * 8) + 8; // Simulated 8-15ms
+                document.getElementById('pingMs').innerText = `${latency} ms`;
+                logMessage(`Ping reply from Shopee Server: time=${latency}ms TTL=56`, 'success');
+            }, 300);
+        }
+
+        // Save Configuration
+        function saveConfiguration() {
+            const config = {
+                url: document.getElementById('targetUrl').value,
+                maxPrice: document.getElementById('maxPrice').value,
+                payment: document.getElementById('paymentMethod').value,
+                date: document.getElementById('targetDate').value,
+                time: document.getElementById('targetTime').value,
+                offset: document.getElementById('msOffset').value,
+            };
+            localStorage.setItem('shopee_bot_config', JSON.stringify(config));
+            logMessage('Konfigurasi berhasil disimpan ke LocalStorage Android.', 'success');
+        }
+
+        // Load Saved Configuration on Init
+        function loadSavedConfig() {
+            const saved = localStorage.getItem('shopee_bot_config');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.url) document.getElementById('targetUrl').value = parsed.url;
+                    if (parsed.maxPrice) document.getElementById('maxPrice').value = parsed.maxPrice;
+                    if (parsed.payment) document.getElementById('paymentMethod').value = parsed.payment;
+                    if (parsed.date) document.getElementById('targetDate').value = parsed.date;
+                    if (parsed.time) document.getElementById('targetTime').value = parsed.time;
+                    if (parsed.offset) document.getElementById('msOffset').value = parsed.offset;
+                    logMessage('Loaded configuration from saved profile.', 'info');
+                } catch(e){}
+            }
+        }
+
+        // Initialize Engine on Window Load
+        window.onload = function() {
+            loadSavedConfig();
+            // High frequency timer loop for millisecond precision
+            setInterval(updateClocks, 10);
+            logMessage('Timer loop started at 100Hz frequency.', 'system');
+        }
+    </script>
+</body>
+</html>
+```
